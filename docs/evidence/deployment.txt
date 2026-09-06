@@ -1,0 +1,4 @@
+active
+active
+agent-dev:agent-core 750 /home/agent-admin/agent-app/bin/monitor.sh
+Deployed sources match repository

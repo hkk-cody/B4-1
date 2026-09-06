@@ -1,0 +1,134 @@
+Verification time: 2026-09-06T22:06:39+09:00
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.4 LTS (Noble Numbat)"
+aarch64
+port 20022
+permitrootlogin no
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                
+LISTEN 0      4096         0.0.0.0:20022      0.0.0.0:*    users:(("sshd",pid=6439,fd=3),("systemd",pid=1,fd=66))
+LISTEN 0      4096            [::]:20022         [::]:*    users:(("sshd",pid=6439,fd=4),("systemd",pid=1,fd=67))
+[PASS] SSH 20022; root login disabled; port 22 closed
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+20022/tcp                  ALLOW IN    Anywhere                  
+15034/tcp                  ALLOW IN    Anywhere                  
+20022/tcp (v6)             ALLOW IN    Anywhere (v6)             
+15034/tcp (v6)             ALLOW IN    Anywhere (v6)             
+
+[PASS] UFW active with only TCP 20022 and 15034 allowed
+uid=1000(agent-admin) gid=1002(agent-admin) groups=1002(agent-admin),1000(agent-common),1001(agent-core)
+uid=1001(agent-dev) gid=1003(agent-dev) groups=1003(agent-dev),1000(agent-common),1001(agent-core)
+uid=1002(agent-test) gid=1004(agent-test) groups=1004(agent-test),1000(agent-common)
+agent-common:x:1000:agent-admin,agent-dev,agent-test
+agent-core:x:1001:agent-admin,agent-dev
+drwxr-x--- 750 agent-admin:agent-common /home/agent-admin/agent-app
+drwxrws--- 2770 agent-admin:agent-common /home/agent-admin/agent-app/upload_files
+drwxrws--- 2770 agent-admin:agent-core /home/agent-admin/agent-app/api_keys
+drwxr-x--- 750 agent-dev:agent-core /home/agent-admin/agent-app/bin
+drwxrws--- 2770 agent-admin:agent-core /var/log/agent-app
+# file: /home/agent-admin
+# owner: agent-admin
+# group: agent-admin
+user::rwx
+group::r-x
+group:agent-common:--x
+mask::r-x
+other::---
+
+# file: /home/agent-admin/agent-app/upload_files
+# owner: agent-admin
+# group: agent-common
+# flags: -s-
+user::rwx
+group::rwx
+group:agent-common:rwx
+mask::rwx
+other::---
+default:user::rwx
+default:group::rwx
+default:group:agent-common:rwx
+default:mask::rwx
+default:other::---
+
+# file: /home/agent-admin/agent-app/api_keys
+# owner: agent-admin
+# group: agent-core
+# flags: -s-
+user::rwx
+group::rwx
+group:agent-core:rwx
+mask::rwx
+other::---
+default:user::rwx
+default:group::rwx
+default:group:agent-core:rwx
+default:mask::rwx
+default:other::---
+
+# file: /var/log/agent-app
+# owner: agent-admin
+# group: agent-core
+# flags: -s-
+user::rwx
+group::rwx
+group:agent-core:rwx
+mask::rwx
+other::---
+default:user::rwx
+default:group::rwx
+default:group:agent-core:rwx
+default:mask::rwx
+default:other::---
+
+# file: /home/agent-admin/agent-app/upload_files/verify-normal-6984
+# owner: agent-test
+# group: agent-common
+user::rw-
+group::rwx	#effective:rw-
+group:agent-common:rwx	#effective:rw-
+mask::rw-
+other::---
+
+[PASS] Upload shared R/W; core R/W; test denied keys/logs; ACL inheritance; monitor owner/mode
+AGENT_HOME=/home/agent-admin/agent-app
+AGENT_KEY_PATH=/home/agent-admin/agent-app/api_keys/t_secret.key
+AGENT_LOG_DIR=/var/log/agent-app
+AGENT_PORT=15034
+AGENT_UPLOAD_DIR=/home/agent-admin/agent-app/upload_files
+-rw-rw---- agent-admin:agent-core /home/agent-admin/agent-app/api_keys/t_secret.key
+[PASS] Canonical assignment key path and binary compatibility link
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess
+LISTEN 0      1            0.0.0.0:15034      0.0.0.0:*    users:(("agent-app-linux",pid=4737,fd=4))
+====== SYSTEM MONITOR RESULT ======
+
+[HEALTH CHECK]
+Checking agent process... [OK] (PID: 4734)
+Checking port 15034... [OK]
+
+[RESOURCE MONITORING]
+CPU Usage : 2.1%
+MEM Usage : 13.0%
+DISK Used : 2%
+
+[INFO] Firewall status: ufw active
+[WARNING] MEM threshold exceeded (13.0% > 10%)
+
+[INFO] Log appended: /var/log/agent-app/monitor.log
+[2026-09-06 22:03:24] PID:4734 CPU:0.5% MEM:13.6% DISK_USED:2%
+[2026-09-06 22:04:02] PID:4734 CPU:2.0% MEM:17.0% DISK_USED:2%
+[2026-09-06 22:05:03] PID:4734 CPU:2.9% MEM:12.8% DISK_USED:2%
+[2026-09-06 22:06:02] PID:4734 CPU:2.4% MEM:14.7% DISK_USED:2%
+[2026-09-06 22:06:40] PID:4734 CPU:2.1% MEM:13.0% DISK_USED:2%
+
+* * * * * /home/agent-admin/agent-app/bin/monitor.sh >/dev/null 2>&1
+active
+[PASS] App 0.0.0.0:15034; monitor successful; cron active and registered
+
+All VM checks passed.

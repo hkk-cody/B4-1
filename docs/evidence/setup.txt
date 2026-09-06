@@ -1,0 +1,26 @@
+
+[1/5] SSH and firewall
+Skipping adding existing rule
+Skipping adding existing rule (v6)
+Skipping adding existing rule
+Skipping adding existing rule (v6)
+Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)
+Default outgoing policy changed to 'allow'
+(be sure to update your rules accordingly)
+Firewall is active and enabled on system startup
+Synchronizing state of ssh.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable ssh
+
+[2/5] Accounts and permissions
+
+[3/5] Environment and application
+
+[4/5] Read-only firewall permission
+/tmp/tmp.Gb4zO6mfPP: parsed OK
+
+[5/5] Cron
+Synchronizing state of cron.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable cron
+
+Setup complete. Run as agent-admin: /home/agent-admin/agent-app/bin/run-agent.sh

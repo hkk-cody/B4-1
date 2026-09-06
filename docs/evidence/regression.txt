@@ -1,0 +1,8 @@
+[PASS] Threshold boundaries: equality silent; all three greater values warn
+[PASS] 10MiB rotation; maximum 10 files; oldest and stray backups removed
+[PASS] Rotate before append would exceed limit; exact limit is allowed
+[PASS] Real Linux CPU/MEM/DISK collection produces numeric results
+[PASS] Report averages and inclusive time range
+[PASS] Simulated inactive firewall and query failure warn without exiting
+[PASS] Malformed log skipped and inverted time range rejected
+All regression tests passed.

@@ -1,0 +1,15 @@
+====== SYSTEM MONITOR RESULT ======
+
+[HEALTH CHECK]
+Checking agent process... [OK] (PID: 4734)
+Checking port 15034... [OK]
+
+[RESOURCE MONITORING]
+CPU Usage : 3.2%
+MEM Usage : 13.3%
+DISK Used : 2%
+
+[INFO] Firewall status: ufw active
+[WARNING] MEM threshold exceeded (13.3% > 10%)
+
+[INFO] Log appended: /var/log/agent-app/monitor.log

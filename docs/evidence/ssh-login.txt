@@ -1,0 +1,5 @@
+Warning: Permanently added '[127.0.0.1]:20022' (ED25519) to the list of known hosts.
+[PASS] SSH port 20022: agent-admin authenticated using temporary key
+root@127.0.0.1: Permission denied (publickey,password).
+[PASS] SSH port 20022: root rejected even with authorized temporary key
+[INFO] Temporary keys removed by cleanup

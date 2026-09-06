@@ -1,0 +1,12 @@
+====== SYSTEM MONITOR RESULT ======
+
+[HEALTH CHECK]
+Checking agent process... [OK] (PID: 4306)
+Checking port 15035... [FAIL]
+[PASS] Closed TCP port returns exit 1
+====== SYSTEM MONITOR RESULT ======
+
+[HEALTH CHECK]
+Checking agent process... [FAIL]
+[PASS] Stopped application returns exit 1 (no parent-command false positive)
+Running as unit: agent-assignment.service; invocation ID: 7a251b215c5d458bb68c549d4c2404f2

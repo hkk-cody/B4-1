@@ -1,0 +1,18 @@
+2026-09-06T22:05:24+09:00
+
+
+* * * * * /home/agent-admin/agent-app/bin/monitor.sh >/dev/null 2>&1
+7 /var/log/agent-app/monitor.log
+[2026-09-06 22:01:54] PID:4306 CPU:1.6% MEM:16.7% DISK_USED:2%
+[2026-09-06 22:02:02] PID:4306 CPU:2.5% MEM:16.0% DISK_USED:2%
+[2026-09-06 22:02:30] PID:4306 CPU:1.9% MEM:13.2% DISK_USED:2%
+[2026-09-06 22:03:02] PID:4306 CPU:2.7% MEM:14.2% DISK_USED:2%
+[2026-09-06 22:03:24] PID:4734 CPU:0.5% MEM:13.6% DISK_USED:2%
+[2026-09-06 22:04:02] PID:4734 CPU:2.0% MEM:17.0% DISK_USED:2%
+[2026-09-06 22:05:03] PID:4734 CPU:2.9% MEM:12.8% DISK_USED:2%
+Sep 06 22:05:01 24.04ubuntu CRON[4860]: pam_unix(cron:session): session opened for user agent-admin(uid=1000) by (uid=0)
+Sep 06 22:05:01 24.04ubuntu CRON[4861]: (agent-admin) CMD (/home/agent-admin/agent-app/bin/monitor.sh >/dev/null 2>&1)
+Sep 06 22:05:02 24.04ubuntu sudo[4875]: agent-admin : PWD=/home/agent-admin ; USER=root ; COMMAND=/usr/sbin/ufw status
+Sep 06 22:05:02 24.04ubuntu sudo[4875]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+Sep 06 22:05:03 24.04ubuntu sudo[4875]: pam_unix(sudo:session): session closed for user root
+Sep 06 22:05:03 24.04ubuntu CRON[4860]: pam_unix(cron:session): session closed for user agent-admin
