@@ -12,8 +12,8 @@
 | 저장소 위치 | `/Users/hankkim/Desktop/codyssey/B4-1` — 소스와 문서를 편집하는 곳 |
 | 앱 설치 위치 | `/home/agent-admin/agent-app` — VM에서 앱과 관제를 실제 실행하는 곳 |
 | 로그 위치 | `/var/log/agent-app/monitor.log` — VM에 생성되는 결과 |
-| 수행 범위 | 필수 과제 + 보너스 1(통계 리포트). 보너스 2는 미선택 |
-| 검증 이력 | 2026-09-06 ARM64 VM에서 통과. 당시 결과이며 이후 VM 상태가 바뀌면 다시 확인 |
+| 수행 범위 | 필수 과제만 수행. 보너스 1·2는 미선택 |
+| 검증 이력 | 2026-10-08 ARM64 VM에서 간소화한 스크립트로 재설치·전체 테스트 통과 |
 
 **아래 명령은 별도 표시가 없으면 Ubuntu VM의 일반 관리 계정 터미널에서 실행한다.** 현재 VM의 기본 계정은 `hankkim`이다. `sudo`는 필요한 명령 한 개를 관리자 권한으로 실행한다. `sudo -u agent-admin`은 해당 명령을 `agent-admin`으로 실행한다.
 
@@ -48,8 +48,7 @@ B4-1/
 ├── bin/
 │   ├── setup.sh           VM 설정·파일 설치·cron 등록
 │   ├── run-agent.sh       일반 계정으로 앱 실행
-│   ├── monitor.sh         상태 측정·경고·로그 기록·로그 회전
-│   └── report.sh          기록된 로그의 통계 출력
+│   └── monitor.sh         상태 측정·경고·로그 기록·로그 회전
 ├── tests/                 검증용 Bash 스크립트
 └── docs/
     ├── README.md          학습 순서
@@ -66,7 +65,6 @@ B4-1/
 | [setup.sh](bin/setup.sh) | 처음 설치하거나 수정한 소스를 VM에 다시 반영할 때 | 관리 계정에서 sudo |
 | [run-agent.sh](bin/run-agent.sh) | 앱을 켤 때 | agent-admin |
 | [monitor.sh](bin/monitor.sh) | 앱 상태를 한 번 확인할 때, cron이 매분 실행할 때 | agent-admin |
-| [report.sh](bin/report.sh) | 쌓인 로그의 평균·최대·최소를 볼 때 | agent-admin |
 | [tests 안내](tests/README.md) | 정상/실패 조건을 자동 검사할 때 | 테스트별로 다름 |
 
 **저장소 파일을 수정해도 VM에 이미 설치한 복사본이 자동으로 바뀌지는 않는다.** 수정 후에는 설치 명령으로 다시 반영하고 검증한다.
@@ -219,19 +217,12 @@ sudo -iu agent-admin env | grep '^AGENT_'
 
 자동 검증을 실행하려면 [tests 안내](tests/README.md)를 따른다. 테스트 일부는 앱을 종료하거나 임시 인증키를 추가·제거하므로 먼저 해당 테스트 설명을 읽는다. 앱 종료 검증 후에는 4번 명령으로 앱을 다시 켠다.
 
-## 8. 보너스 리포트와 제출 자료
+## 8. 제출 자료
 
-```bash
-sudo -u agent-admin /home/agent-admin/agent-app/bin/report.sh
-```
-
-기본 대상은 현재 `monitor.log`다. 평균·최대·최소·샘플 수를 출력한다. 회전본까지 자동 합산하지는 않는다. 시간 구간 지정 방법은 [로그·cron 학습](docs/lessons/06-logs-and-cron.md)을 참고한다.
-
-제출할 핵심 자료는 다음과 같다.
+보너스 과제(report.sh 통계, 시간 기반 로그 아카이브)는 수행하지 않는다. 제출할 핵심 자료는 다음과 같다.
 
 - [수행 내역서](docs/submission.md): 설정·명령·결과·검증 증거 링크
 - [monitor.sh](bin/monitor.sh): 필수 소스
 - [실제 증거](docs/evidence/README.md): 해당 문서가 참조하는 출력과 이미지
-- [report.sh](bin/report.sh): 보너스 1을 제출한다면 함께 포함
 
 문서만 따로 복사하면 상대 링크의 이미지와 증거가 빠질 수 있다. 관련 폴더 구조를 함께 유지한다. 설정을 바꿨다면 기존 캡처를 그대로 완료 증거로 쓰지 말고 현재 결과로 갱신한다.

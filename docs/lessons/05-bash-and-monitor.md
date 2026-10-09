@@ -19,8 +19,7 @@ set -euo pipefail
 | `-u` | 설정되지 않은 변수를 사용하면 오류 |
 | `pipefail` | 파이프 앞부분의 실패도 전체 결과에 반영 |
 | `LC_ALL=C` | 명령 출력과 소수점 등 로케일 차이를 줄임 |
-| `PATH=...` | 명령 실행 파일을 찾을 디렉토리 목록 |
-| `umask 007` | 기본 파일 생성 때 기타 사용자의 권한을 제한. 부모 default ACL과 생성 모드도 함께 영향을 줌 |
+| `PATH=...` | 명령 실행 파일을 찾을 디렉토리 목록(cron 대비) |
 
 이 옵션들이 모든 오류를 자동 해결해 주는 것은 아니다. 현재 코드는 중요한 검사에서 `check_process || return 1`처럼 실패 처리를 명시한다.
 
@@ -103,7 +102,7 @@ for metric in CPU MEM DISK; do
 done
 ```
 
-반복문은 여러 값이나 파일을 차례로 처리한다. 실제 `check_process`는 `/proc/[0-9]*`의 프로세스 디렉토리를 반복해서 살펴본다. `setup.sh`의 `missing=()`와 `missing+=(값)`은 여러 패키지 이름을 저장하는 배열이다.
+반복문은 여러 값이나 파일을 차례로 처리한다. `setup.sh`의 `missing=()`와 `missing+=(값)`은 여러 패키지 이름을 저장하는 배열이다. `monitor.sh`의 로그 회전에서는 `for (( i = MAX_LOG_FILES - 2; i >= 1; i-- ))` 같은 C 스타일 반복문으로 `.8→.9`, `.7→.8` 순서대로 이름을 바꾼다.
 
 ## 5.5 main부터 읽으면 전체가 보인다
 
@@ -124,25 +123,25 @@ flowchart TD
 
 | 함수 | 하는 일 | 확인할 코드 |
 | --- | --- | --- |
-| check_process | 실행 중인 앱 후보 찾기 | /proc, read, case |
-| check_port | 지정 TCP 포트의 LISTEN 확인 | ss의 sport 필터 |
-| check_firewall | 활성·비활성·조회 실패 구분 | sudo -n, WARNING |
-| cpu_snapshot / get_cpu_usage | 1초 전후 CPU 누적값 차이 계산 | /proc/stat, sleep, awk |
-| get_mem_usage | 사용 가능한 메모리를 이용해 사용률 계산 | /proc/meminfo |
-| get_disk_usage | 루트 파티션 사용률 | df -P / |
+| check_process | 실행 중인 앱 찾기 | pgrep -o -f, 앵커 정규식 |
+| check_port | 지정 TCP 포트의 LISTEN 확인 | ss -Hltn, sport 필터 |
+| check_firewall | 활성·비활성·조회 실패 구분 | sudo -n ufw status |
+| get_cpu_usage | 1초 전후 CPU 누적값 차이 계산 | /proc/stat, sleep, awk |
+| get_mem_usage | 실제 사용률 계산 | free, awk |
+| get_disk_usage | 루트 파티션 사용률 | df --output=pcent / |
 | print_warning_if_needed | 기준을 넘은 값만 경고 | awk 숫자 비교 |
-| rotate_logs_if_needed | 다음 줄이 한도를 넘기 전 회전 | stat, mv, rm |
-| main | 위 과정을 연결 | 검사·숫자 확인·printf |
+| rotate_logs_if_needed | 다음 줄이 한도를 넘기 전 회전 | stat, mv |
+| main | 위 과정을 순서대로 연결 | flock, 검사, printf |
 
 파일 마지막의 `if [[ ${BASH_SOURCE[0]} == "$0" ]]`는 직접 실행할 때만 main을 부른다. 테스트에서 `source`할 때는 함수만 불러오므로 개별 함수를 검사할 수 있다.
 
 ## 5.6 프로세스를 찾을 때 주의할 점
 
-`pgrep -f 문자열`은 전체 명령줄에서 문자열을 찾는다. 예를 들어 앱 파일명을 인자로 가진 `sudo` 명령까지 앱이라고 잘못 고를 수 있다.
+`pgrep -f 문자열`은 전체 명령줄에서 문자열을 찾는다. 예를 들어 앱 파일명을 인자로 가진 `sudo`나 `vim` 명령까지 앱이라고 잘못 고를 수 있다.
 
-현재 코드는 `/proc/PID/cmdline`의 **첫 실행 인자**를 읽고 제공 앱 이름과 비교한다. Python인 경우 뒤 인자에서 `agent_app.py`를 확인한다. `cmdline`의 값들은 보통 줄바꿈이 아니라 NUL 문자로 구분되므로 `read -d ''`를 쓴다.
+현재 코드는 정규식의 맨 앞을 `^([^ ]*/)?`로 고정해 **명령줄의 첫 단어(실행 파일 경로)**가 제공 앱 바이너리이거나 `python ... agent_app.py`인 경우만 찾는다. 이렇게 하면 `sudo -u agent-admin .../agent-app-linux-arm64` 같은 부모 명령이나 편집기 명령은 첫 단어가 `sudo`, `vim`이므로 매칭되지 않는다.
 
-`/proc/PID/exe`는 실행 파일을 가리키지만 VM의 접근 정책 때문에 같은 사용자라도 읽지 못하는 상황을 실제로 만났다. 이 때문에 현재 방식을 사용했다. 이 검사는 과제의 실행 여부 확인이며 앱 내부 기능이나 포트를 소유한 프로세스와의 엄밀한 동일성까지 검증하는 것은 아니다.
+또한 `/proc/PID/exe`는 같은 사용자라도 보안 정책(ptrace 등) 때문에 읽지 못하는 경우가 있어 사용하지 않는다.
 
 ## 5.7 awk는 표 형태의 텍스트를 계산한다
 
@@ -152,17 +151,16 @@ printf 'CPU 12.5\n' | awk '{print $1, $2 * 2}'
 
 결과는 `CPU 25`다. awk에서 `$1`, `$2`는 입력 줄의 첫 번째·두 번째 필드다. Bash의 함수 인자 `$1`과 생김새는 같지만 **어느 언어 안에서 해석되는지**에 따라 의미가 다르다. 작은따옴표 안의 awk 코드는 Bash가 `$1`을 먼저 바꾸지 않게 해 준다.
 
-`BEGIN`은 입력 전, 일반 규칙은 각 줄에서, `END`는 모든 입력을 읽은 후에 실행된다. `report.sh`는 값을 합산하며 최솟값·최댓값을 저장한 뒤 END에서 평균을 출력한다.
+`BEGIN`은 입력 전, 일반 규칙은 각 줄에서, `END`는 모든 입력을 읽은 후에 실행된다. `monitor.sh`에서는 CPU 비율 계산과 임계값(소수점) 비교에서 `awk`를 사용한다. (Bash 자체는 정수 계산만 지원하고 소수점 비교를 못 하기 때문이다)
 
 ## 5.8 설치 코드도 함께 읽기
 
 [setup.sh](../../bin/setup.sh)는 시스템 설정을 실제로 바꾸므로 실행보다 읽기부터 한다.
 
-- `SCRIPT_DIR`는 현재 터미널 위치가 아니라 스크립트 파일의 위치를 계산한다.
-- `install -o ... -g ... -m ...`은 파일 복사와 소유권·권한 지정을 함께 처리한다.
-- 파일을 `.new`에 설치하고 문법 검사 후 `mv`하여 실행 중인 관제가 중간 파일을 읽을 가능성을 줄인다.
-- `<<'PROFILE'` 같은 here-document는 여러 줄을 파일에 쓴다. 구분자에 따옴표가 있으면 작성 시점에 `$AGENT_HOME`이 미리 치환되지 않는다.
-- `trap ... EXIT`는 종료 시 임시 파일을 정리한다.
+- `SCRIPT_DIR` 대신 `dirname "$0"`으로 스크립트 위치를 간단히 구한다.
+- `install -o ... -g ... -m ...`은 파일 복사와 소유권·권한 지정을 한 번에 처리한다.
+- `setfacl --set`은 access ACL과 default ACL을 한 번에 정의해 하위 파일/디렉토리까지 권한을 상속시킨다.
+- `<<'EOF'` 같은 here-document는 여러 줄을 파일에 쓴다. 구분자에 따옴표가 있으면 작성 시점에 환경 변수가 미리 치환되지 않는다.
 
 추가로 심볼릭 링크를 따라 실제 스크립트 위치를 찾는 방법은 [선택 예제](../examples/dirname_resolve.sh)에 보존했다. 이 예제는 앱 설치에 필요한 파일은 아니다.
 

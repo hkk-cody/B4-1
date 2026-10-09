@@ -32,7 +32,6 @@ flowchart TD
     G --> H[monitor.sh로 상태 확인]
     I[cron 매분 일정] --> H
     H --> J[monitor.log에 한 줄 기록]
-    J --> K[report.sh로 통계 확인]
 ```
 
 그림을 한 문장으로 읽으면 “VM을 준비하고 일반 계정으로 앱을 켠 다음, cron이 관제 스크립트를 매분 실행해 로그를 남긴다”이다. Mermaid가 표시되지 않는 뷰어에서는 이 문장과 위의 학습 순서 표를 따라가면 된다.
@@ -41,6 +40,8 @@ flowchart TD
 
 | 궁금한 내용 | 볼 곳 |
 | --- | --- |
+| OrbStack으로 직접 실습하고 싶다 | [OrbStack 실습 가이드](orbstack_guide.md) |
+| setup.sh 없이 한 줄씩 직접 구축하고 싶다 | [수동 심층 실습 가이드](manual_deep_dive_guide.md) |
 | 지금 무엇을 실행해야 하나? | [루트 README](../README.md) |
 | 과제에서 정확히 무엇을 요구하나? | [원본 요구사항](assignment/requirements.md) |
 | 이전에 무엇을 했고 결과는 어땠나? | [수행 내역서](submission.md) |

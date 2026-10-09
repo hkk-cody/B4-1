@@ -4,7 +4,7 @@
 
 | 파일 | 실행자 | 검사 내용 | 실제 영향 |
 | --- | --- | --- | --- |
-| [test_monitor.sh](test_monitor.sh) | agent-admin | 임계값, 10MiB 회전, 실제 자원 수집, 통계, 잘못된 로그 | /tmp의 테스트 자료만 생성·정리. 운영 로그를 사용하지 않음 |
+| [test_monitor.sh](test_monitor.sh) | agent-admin | 임계값, 10MiB 회전, 실제 자원 수집, 프로세스 탐지 정규식 | /tmp의 테스트 자료만 생성·정리. 운영 로그를 사용하지 않음 |
 | [verify_vm.sh](verify_vm.sh) | root | SSH/UFW·계정·ACL·환경·앱·관제 | 임시 접근 검사 파일 생성·정리, 정상 monitor.log 한 줄 추가 |
 | [verify_ssh.sh](verify_ssh.sh) | root | 일반 계정 SSH 성공·root 거부 | 임시 인증키를 authorized_keys에 추가하고 종료 시 원래 상태로 복원 |
 | [verify_failures.sh](verify_failures.sh) | root | 닫힌 포트와 앱 정지의 exit 1 | agent-assignment 서비스를 SIGINT로 정지하고 앱 다시 실행 |

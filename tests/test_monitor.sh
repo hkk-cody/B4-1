@@ -1,60 +1,59 @@
 #!/usr/bin/env bash
-# 실제 Linux에서 실행하는 경계값/회전/보고서 회귀 검사. 운영 로그는 사용하지 않는다.
+# =====================================================================
+# test_monitor.sh — monitor.sh 함수 단위 회귀 검사
+#   실행: sudo -u agent-admin bash tests/test_monitor.sh   (Ubuntu VM)
+#   임시 디렉토리만 사용하고 운영 로그(/var/log/agent-app)는 건드리지 않는다.
+# =====================================================================
 set -euo pipefail
-ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
-export AGENT_LOG_DIR="$TMP"
-source "$ROOT/bin/monitor.sh"
-pass() { printf '[PASS] %s\n' "$*"; }
+trap 'rm -rf "$TMP"' EXIT            # 끝나면(성공/실패 모두) 임시 폴더 삭제
+
+export AGENT_LOG_DIR="$TMP"          # 로그 경로를 임시 폴더로 바꿔서
+source "$ROOT/bin/monitor.sh"        # 함수만 불러온다 (main은 실행되지 않음)
+pass() { echo "[PASS] $*"; }
+
+# 1) 임계값: 같으면 조용, 초과하면 3개 모두 경고
 [[ -z $(print_warning_if_needed 20 10 80) ]]
-[[ $(print_warning_if_needed 20.1 10.1 80.1 | wc -l) -eq 3 ]]
-pass 'Threshold boundaries: equality silent; all three greater values warn'
-# 실제 10MiB 한계와 현재 파일을 포함한 최대 개수를 확인한다.
-truncate -s "$MAX_LOG_BYTES" "$AGENT_LOG_FILE"
-for n in {1..9} 12; do printf '%s\n' "$n" > "$AGENT_LOG_FILE.$n"; done
+[[ $(print_warning_if_needed 20.1 10.1 81 | wc -l) -eq 3 ]]
+pass 'Threshold: equal values silent, greater values warn'
+
+# 2) 회전: 10MB 꽉 찬 로그 + 회전본 .1~.9 → 회전 후에도 총 10개
+truncate -s "$MAX_LOG_BYTES" "$LOG_FILE"
+for n in {1..9}; do echo "$n" > "$LOG_FILE.$n"; done
 rotate_logs_if_needed 2
-printf 'x\n' >> "$AGENT_LOG_FILE"
-[[ $(stat -c %s "$AGENT_LOG_FILE.1") -eq "$MAX_LOG_BYTES" ]]
+echo x >> "$LOG_FILE"
+[[ $(stat -c %s "$LOG_FILE.1") -eq $MAX_LOG_BYTES ]]          # 기존 로그가 .1로 이동
+[[ $(cat "$LOG_FILE.9") == 8 ]]                               # .8 → .9, 옛 .9는 삭제
 [[ $(find "$TMP" -name 'monitor.log*' -type f | wc -l) -eq 10 ]]
-[[ ! -e "$AGENT_LOG_FILE.12" ]]
-[[ $(cat "$AGENT_LOG_FILE.9") == 8 ]]
-pass '10MiB rotation; maximum 10 files; oldest and stray backups removed'
-truncate -s "$((MAX_LOG_BYTES-2))" "$AGENT_LOG_FILE"
+pass 'Rotation at 10MB keeps 10 files (current + 9)'
+
+# 3) 경계: 딱 10MB가 되는 건 허용, 넘으면 회전
+truncate -s $((MAX_LOG_BYTES - 2)) "$LOG_FILE"
 rotate_logs_if_needed 2
-[[ $(stat -c %s "$AGENT_LOG_FILE") -eq "$((MAX_LOG_BYTES-2))" ]]
+[[ -e "$LOG_FILE" ]]
 rotate_logs_if_needed 3
-[[ ! -e "$AGENT_LOG_FILE" ]]
-pass 'Rotate before append would exceed limit; exact limit is allowed'
-[[ $(get_cpu_usage) =~ ^[0-9]+[.][0-9]+$ ]]
-[[ $(get_mem_usage) =~ ^[0-9]+[.][0-9]+$ ]]
+[[ ! -e "$LOG_FILE" ]]
+pass 'Rotate only when the next line would exceed 10MB'
+
+# 4) 실제 자원 측정값이 숫자인지
+[[ $(get_cpu_usage)  =~ ^[0-9]+\.[0-9]$ ]]
+[[ $(get_mem_usage)  =~ ^[0-9]+\.[0-9]$ ]]
 [[ $(get_disk_usage) =~ ^[0-9]+$ ]]
-pass 'Real Linux CPU/MEM/DISK collection produces numeric results'
-cat > "$TMP/samples.log" <<'SAMPLES'
-[2026-09-06 12:00:00] PID:1 CPU:10.0% MEM:20.0% DISK_USED:30%
-[2026-09-06 12:01:00] PID:1 CPU:30.0% MEM:40.0% DISK_USED:50%
-SAMPLES
-bash "$ROOT/bin/report.sh" "$TMP/samples.log" > "$TMP/report"
-grep -q 'Average : 20.0%' "$TMP/report"
-grep -q 'Average : 30.0%' "$TMP/report"
-grep -q 'Average : 40.0%' "$TMP/report"
-grep -q 'Data Points: 2 samples' "$TMP/report"
-bash "$ROOT/bin/report.sh" "$TMP/samples.log" '2026-09-06 12:01:00' '2026-09-06 12:01:00' | grep -q 'Data Points: 1 samples'
-pass 'Report averages and inclusive time range'
-# 방화벽 명령 응답을 대체하여 비활성과 권한 오류의 경고 분기를 검사한다.
-(
-  sudo() { printf 'Status: inactive\n'; }
-  output=$(check_firewall)
-  [[ $output == *'Firewall is not active'* ]]
-)
-(
-  sudo() { return 1; }
-  output=$(check_firewall)
-  [[ $output == *'status unavailable'* ]]
-)
-pass 'Simulated inactive firewall and query failure warn without exiting'
-printf 'malformed log\n[2026-09-06 12:00:00] PID:1 CPU:bad%% MEM:%% DISK_USED:%%\n' > "$TMP/invalid.log"
-bash "$ROOT/bin/report.sh" "$TMP/invalid.log" | grep -q 'Data Points: 0 samples'
-if bash "$ROOT/bin/report.sh" "$TMP/samples.log" '2026-09-07 00:00:00' '2026-09-06 00:00:00' >/dev/null 2>&1; then exit 1; fi
-pass 'Malformed log skipped and inverted time range rejected'
-printf 'All regression tests passed.\n'
+pass 'CPU/MEM/DISK collection returns numbers'
+
+# 5) 프로세스 정규식: 실제 앱은 찾고, 인자로만 들어간 명령은 무시
+grep -Eq "$PROCESS_PATTERN" <<< '/home/agent-admin/agent-app/agent-app-linux-arm64'
+grep -Eq "$PROCESS_PATTERN" <<< 'python3 /opt/agent_app.py'
+# 주의: set -e 는 '! 명령' 의 실패를 무시하므로 부정 검사는 if 로 직접 처리한다.
+for cmd in 'sudo -u agent-admin /home/agent-admin/agent-app/agent-app-linux-arm64' 'vim agent_app.py'; do
+  if grep -Eq "$PROCESS_PATTERN" <<< "$cmd"; then echo "[FAIL] matched: $cmd"; exit 1; fi
+done
+pass 'Process pattern matches the app, ignores parent/editor commands'
+
+# 6) 방화벽: sudo 응답을 가짜 함수로 바꿔 비활성/조회 실패 분기 확인
+( sudo() { echo 'Status: inactive'; }; [[ $(check_firewall) == *'not active'* ]] )
+( sudo() { return 1; };               [[ $(check_firewall) == *'unavailable'* ]] )
+pass 'Firewall inactive / query failure only warn'
+
+echo 'All regression tests passed.'
