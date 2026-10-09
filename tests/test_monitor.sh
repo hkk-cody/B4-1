@@ -18,15 +18,17 @@ pass() { echo "[PASS] $*"; }
 [[ $(print_warning_if_needed 20.1 10.1 81 | wc -l) -eq 3 ]]
 pass 'Threshold: equal values silent, greater values warn'
 
-# 2) 회전: 10MB 꽉 찬 로그 + 회전본 .1~.9 → 회전 후에도 총 10개
+# 2) 회전: 10MB 꽉 찬 로그 + 회전본 .1~.9 + 과거 .12 파일 → 회전 후에도 총 10개
 truncate -s "$MAX_LOG_BYTES" "$LOG_FILE"
 for n in {1..9}; do echo "$n" > "$LOG_FILE.$n"; done
+echo 12 > "$LOG_FILE.12"                                      # .10 이상 stray 파일
 rotate_logs_if_needed 2
 echo x >> "$LOG_FILE"
 [[ $(stat -c %s "$LOG_FILE.1") -eq $MAX_LOG_BYTES ]]          # 기존 로그가 .1로 이동
 [[ $(cat "$LOG_FILE.9") == 8 ]]                               # .8 → .9, 옛 .9는 삭제
+[[ ! -e "$LOG_FILE.12" ]]                                     # stray .12 삭제 확인
 [[ $(find "$TMP" -name 'monitor.log*' -type f | wc -l) -eq 10 ]]
-pass 'Rotation at 10MB keeps 10 files (current + 9)'
+pass 'Rotation at 10MB keeps 10 files (current + 9, stray backups removed)'
 
 # 3) 경계: 딱 10MB가 되는 건 허용, 넘으면 회전
 truncate -s $((MAX_LOG_BYTES - 2)) "$LOG_FILE"

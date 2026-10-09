@@ -71,7 +71,8 @@ for u in agent-admin agent-dev agent-test; do
 done
 usermod -aG agent-common,agent-core agent-admin        # -aG: 기존 그룹 유지하며 추가
 usermod -aG agent-common,agent-core agent-dev
-usermod -aG agent-common            agent-test         # test는 core 제외 (최소 권한)
+usermod -G  agent-common            agent-test         # -G: test 보조 그룹을 common만으로 고정 (core 제외)
+gpasswd -d agent-test agent-core &>/dev/null || true   # 기존에 속해 있었더라도 core에서 확실히 제거
 
 # /home/agent-admin(750)은 다른 계정이 못 들어간다 → common 그룹에 "통과(x)" 권한만 준다.
 setfacl -m g:agent-common:--x /home/agent-admin       # setfacl : -m 수정, g: 그룹
@@ -129,8 +130,9 @@ visudo -cf /etc/sudoers.d/agent-monitor   # sudoers 문법 검사
 # ── 5. cron 매분 실행 등록 ──────────────────────────────────────────
 echo '[5/5] cron: run monitor.sh every minute as agent-admin'
 # 분 시 일 월 요일 → "* * * * *" = 매분.  화면 출력은 버리고 로그는 스크립트가 직접 쓴다.
-# agent-admin 전용 crontab을 이 한 줄로 설정한다. (여러 번 실행해도 중복되지 않음)
-echo '* * * * * /home/agent-admin/agent-app/bin/monitor.sh >/dev/null 2>&1' | crontab -u agent-admin -
+# agent-admin의 기존 crontab은 보존하고, monitor.sh 작업만 중복 없이 등록/갱신한다.
+CRON_JOB='* * * * * /home/agent-admin/agent-app/bin/monitor.sh >/dev/null 2>&1'
+( crontab -u agent-admin -l 2>/dev/null | grep -Fv '/home/agent-admin/agent-app/bin/monitor.sh' || true; echo "$CRON_JOB" ) | crontab -u agent-admin -
 systemctl enable --now cron
 
 echo

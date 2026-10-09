@@ -1,8 +1,7 @@
-[PASS] Threshold boundaries: equality silent; all three greater values warn
-[PASS] 10MiB rotation; maximum 10 files; oldest and stray backups removed
-[PASS] Rotate before append would exceed limit; exact limit is allowed
-[PASS] Real Linux CPU/MEM/DISK collection produces numeric results
-[PASS] Report averages and inclusive time range
-[PASS] Simulated inactive firewall and query failure warn without exiting
-[PASS] Malformed log skipped and inverted time range rejected
+[PASS] Threshold: equal values silent, greater values warn
+[PASS] Rotation at 10MB keeps 10 files (current + 9, stray backups removed)
+[PASS] Rotate only when the next line would exceed 10MB
+[PASS] CPU/MEM/DISK collection returns numbers
+[PASS] Process pattern matches the app, ignores parent/editor commands
+[PASS] Firewall inactive / query failure only warn
 All regression tests passed.

@@ -36,7 +36,7 @@ sudo bash /Users/hankkim/Desktop/codyssey/B4-1/bin/setup.sh
 - 계정·그룹과 디렉토리를 생성하고, `/home/agent-admin`에는 common의 통과 권한만 추가한다. 공유·보안 디렉토리의 ACL은 `setfacl --set` 한 번으로 access/default를 함께 지정한다.
 - CPU 종류에 맞는 바이너리와 스크립트를 `install`로 복사하면서 소유권과 실행 권한을 지정한다.
 - `agent-admin`에 `/usr/sbin/ufw status` 조회 하나만 비밀번호 없이 허용한다. 관제 전체를 root로 실행하지 않는다.
-- `agent-admin`의 crontab을 과제 관제 한 줄로 설정한다(전용 계정이므로 재실행해도 중복되지 않음).
+- `agent-admin`의 기존 crontab은 보존하면서, 관제 스크립트만 중복 없이 등록/갱신한다.
 
 ### 디렉토리와 권한
 

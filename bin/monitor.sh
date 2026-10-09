@@ -104,9 +104,18 @@ print_warning_if_needed() {
 # 새 줄($1 바이트)을 붙이면 10MB를 넘는 경우에만 회전한다.
 #   .8→.9, .7→.8, ... .1→.2, monitor.log→.1  (기존 .9는 mv로 덮여 삭제됨)
 rotate_logs_if_needed() {
-  local size i
+  local size i file suffix
   size=$(stat -c %s "$LOG_FILE" 2>/dev/null || echo 0)   # 파일이 없으면 0
   (( size + $1 > MAX_LOG_BYTES )) || return 0
+
+  # .10 이상 기존 회전본 및 가장 오래된 회전본 정리 (총 MAX_LOG_FILES개 유지)
+  for file in "$LOG_FILE".[0-9]*; do
+    [[ -f "$file" ]] || continue
+    suffix=${file##*.}
+    if (( 10#$suffix >= MAX_LOG_FILES - 1 )); then
+      rm -f -- "$file"
+    fi
+  done
 
   for (( i = MAX_LOG_FILES - 2; i >= 1; i-- )); do
     if [[ -f "$LOG_FILE.$i" ]]; then
